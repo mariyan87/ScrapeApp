@@ -1,0 +1,11 @@
+E:\projects\ScrapeApp\ScrapeApp\bin\Debug\ScrapeApp.exe.config
+E:\projects\ScrapeApp\ScrapeApp\bin\Debug\ScrapeApp.exe
+E:\projects\ScrapeApp\ScrapeApp\bin\Debug\ScrapeApp.pdb
+E:\projects\ScrapeApp\ScrapeApp\obj\Debug\ScrapeApp.csprojResolveAssemblyReference.cache
+E:\projects\ScrapeApp\ScrapeApp\obj\Debug\ScrapeApp.exe
+E:\projects\ScrapeApp\ScrapeApp\obj\Debug\ScrapeApp.pdb
+E:\projects\ScrapeApp\ScrapeApp\bin\Debug\HtmlAgilityPack.dll
+E:\projects\ScrapeApp\ScrapeApp\bin\Debug\HtmlAgilityPack.pdb
+E:\projects\ScrapeApp\ScrapeApp\bin\Debug\HtmlAgilityPack.xml
+E:\projects\ScrapeApp\ScrapeApp\obj\Debug\ScrapeApp.CarsViewer.resources
+E:\projects\ScrapeApp\ScrapeApp\obj\Debug\ScrapeApp.csproj.GenerateResource.Cache

@@ -1,0 +1,13 @@
+E:\projects\ScrapeApp\Viewer\bin\Debug\Viewer.exe.config
+E:\projects\ScrapeApp\Viewer\bin\Debug\Viewer.exe
+E:\projects\ScrapeApp\Viewer\bin\Debug\Viewer.pdb
+E:\projects\ScrapeApp\Viewer\bin\Debug\HtmlAgilityPack.dll
+E:\projects\ScrapeApp\Viewer\bin\Debug\HtmlAgilityPack.pdb
+E:\projects\ScrapeApp\Viewer\bin\Debug\HtmlAgilityPack.xml
+E:\projects\ScrapeApp\Viewer\obj\Debug\Viewer.csprojResolveAssemblyReference.cache
+E:\projects\ScrapeApp\Viewer\obj\Debug\ScrapeApp.CarsViewer.resources
+E:\projects\ScrapeApp\Viewer\obj\Debug\Viewer.Properties.Resources.resources
+E:\projects\ScrapeApp\Viewer\obj\Debug\Viewer.csproj.GenerateResource.Cache
+E:\projects\ScrapeApp\Viewer\obj\Debug\Viewer.exe
+E:\projects\ScrapeApp\Viewer\obj\Debug\Viewer.pdb
+E:\projects\ScrapeApp\Viewer\obj\Debug\Viewer.SplashScreen.resources
