@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Forms;
 using HtmlAgilityPack;
@@ -30,12 +29,14 @@ namespace Viewer
         private string _urlBcpea;
         private string _urlNap;
         private string _html = "";
+        private string sendToEmail;
         SplashScreen _splashScreen = new SplashScreen();
 
         public MyContextApp()
         {
             _urlBcpea = ConfigurationManager.AppSettings["URL_BCPEA"];
             _urlNap = ConfigurationManager.AppSettings["URL_NAP"];
+            sendToEmail = ConfigurationManager.AppSettings["SEND_TO_MAILS"];
 
             // Initialize Tray Icon
             trayIcon = new NotifyIcon()
@@ -102,7 +103,7 @@ namespace Viewer
         private void SendMail(string body)
         {
             var fromAddress = new MailAddress("mariyan87@gmail.com", "ЧСИ - new cars");
-            var toAddress = new MailAddress("mariyan87@gmail.com", "Mariyan Marinov");
+            var toAddress = new MailAddress(sendToEmail, "Mariyan Marinov");
             const string fromPassword = "!L0v3D3s1";
             const string subject = "коли в ЧСИ";
 
@@ -115,7 +116,8 @@ namespace Viewer
                 UseDefaultCredentials = false,
                 Credentials = new NetworkCredential(fromAddress.Address, fromPassword)
             };
-            using (var message = new MailMessage(fromAddress, toAddress) {Subject = subject, Body = body, IsBodyHtml = true})
+
+            using (var message = new MailMessage(fromAddress, toAddress) { Subject = subject, Body = body, IsBodyHtml = true })
             {
                 smtp.Send(message);
             }
