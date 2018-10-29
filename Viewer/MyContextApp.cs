@@ -19,10 +19,10 @@ namespace Viewer
     public class MyContextApp : ApplicationContext
     {
         private NotifyIcon trayIcon;
-        private int _hourIntervalRefresh = 3;
-        private string _lastStoredHref;
+        private int refreshIntervalHours = 3;
+        private string _lastStoredHrefBCPEA;
         private string _lastStoredHrefNap;
-        private string _filename = Directory.GetCurrentDirectory() + "/LastCarHref.txt";
+        private string _filenameBCPEA = Directory.GetCurrentDirectory() + "/LastCarHref.txt";
         private string _filenameNap = Directory.GetCurrentDirectory() + "/LastCarHrefNap.txt";
         private string _websiteBCPEALink = "http://sales.bcpea.org";
         private string _websiteNapLink = "https://izpalniteli.com";
@@ -36,7 +36,10 @@ namespace Viewer
         {
             _urlBcpea = ConfigurationManager.AppSettings["URL_BCPEA"];
             _urlNap = ConfigurationManager.AppSettings["URL_NAP"];
-            sendToEmail = ConfigurationManager.AppSettings["SEND_TO_MAILS"];
+            sendToEmail = ConfigurationManager.AppSettings["SEND_TO_MAIL"];
+            refreshIntervalHours = int.Parse(ConfigurationManager.AppSettings["REFRESH_INTERVAL_HOURS"]);
+
+            Logger.Write($"Initializing REFRESH_INTERVAL_HOURS:{refreshIntervalHours} \r\n URL_BCPEA:{_urlBcpea} \r\n URL_NAP:{_urlNap}  \r\n SEND_TO_MAIL:{sendToEmail}");
 
             // Initialize Tray Icon
             trayIcon = new NotifyIcon()
@@ -51,7 +54,7 @@ namespace Viewer
                 Visible = true
             };
 
-            Timer timer = new Timer(1000 * 60 * 60 * _hourIntervalRefresh);
+            Timer timer = new Timer(1000 * 60 * 60 * refreshIntervalHours);
             timer.Elapsed += OnTimedEvent;
             timer.Start();
             UpdateNow(false);
@@ -89,8 +92,9 @@ namespace Viewer
                 return x.SelectNodes(".//a").First().GetAttributeValue("href", "");
                 //return x.ChildNodes["a"].GetAttributeValue("href", "");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
+                Logger.Write("Error on GetHrefForCar ", ex);
                 return "";
             }
         }
@@ -102,9 +106,11 @@ namespace Viewer
 
         private void SendMail(string body)
         {
+            Logger.Write("Sending mail to " + sendToEmail);
+
             var fromAddress = new MailAddress("mariyan87@gmail.com", "ЧСИ - new cars");
             var toAddress = new MailAddress(sendToEmail, "Mariyan Marinov");
-            const string fromPassword = "!L0v3D3s1";
+            const string fromP = "!L0v3D3s1";
             const string subject = "коли в ЧСИ";
 
             var smtp = new SmtpClient
@@ -114,12 +120,19 @@ namespace Viewer
                 EnableSsl = true,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
                 UseDefaultCredentials = false,
-                Credentials = new NetworkCredential(fromAddress.Address, fromPassword)
+                Credentials = new NetworkCredential(fromAddress.Address, fromP)
             };
 
             using (var message = new MailMessage(fromAddress, toAddress) { Subject = subject, Body = body, IsBodyHtml = true })
             {
-                smtp.Send(message);
+                try
+                {
+                    smtp.Send(message);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Write("Error sending mail to " + sendToEmail, ex);
+                }
             }
         }
 
@@ -172,15 +185,11 @@ namespace Viewer
 
                         break; //success
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        if (trials >= 3)
-                        {
-                            throw;
-                        }
+                        Logger.Write("Error on worker - trial : " + trials, ex);
                     }
                 }
-
             };
             bw.RunWorkerCompleted += (s, ea) =>
             {
@@ -193,6 +202,7 @@ namespace Viewer
 
                     if (ea.Error != null)
                     {
+                        Logger.Write("Error on worker completed: ", ea.Error);
                         MessageBox.Show("Failed!" + Environment.NewLine + ea.Error);
                     }
                 }
@@ -204,38 +214,49 @@ namespace Viewer
         {
             _html = "";
 
-            _lastStoredHref = ReadLastCarHref(_filename);
+            _lastStoredHrefBCPEA = ReadLastCarHref(_filenameBCPEA);
             _lastStoredHrefNap = ReadLastCarHref(_filenameNap);
 
-            var docNap = new HtmlWeb().Load(_urlNap).DocumentNode;
-            var nDivs = docNap.SelectNodes("//div[@class]");
-            var carsNapDivs = nDivs.Where(at => at.GetAttributeValue("class", "").Trim() == "aoh-item").ToList();
-            carsNapDivs.ForEach(div => div.InnerHtml = div.InnerHtml.Replace("href=\"/targ/", "href=\"" + _websiteNapLink + "/targ/")
-                .Replace("src=\"/", "src=\"" + _websiteNapLink + "/"));
-            var lastestCarsNap = GetLastestCars(carsNapDivs, _lastStoredHrefNap);
-            UpdateLastStoredHref(lastestCarsNap, _filenameNap, ref _lastStoredHrefNap);
 
-            if (lastestCarsNap.Any())
+            try
             {
-                string title = "Original link: <a href=\"" + _urlNap + "\">" + _urlNap + "</a><hr>";
-                _html += title + string.Join("<hr>", lastestCarsNap.Select(s => s.InnerHtml)) + "<br/>";
+                var docNap = new HtmlWeb().Load(_urlNap).DocumentNode;
+                var nDivs = docNap.SelectNodes("//div[@class]");
+                var carsNapDivs = nDivs.Where(at => at.GetAttributeValue("class", "").Trim() == "aoh-item").ToList();
+                carsNapDivs.ForEach(div => div.InnerHtml = div.InnerHtml.Replace("href=\"/targ/", "href=\"" + _websiteNapLink + "/targ/")
+                    .Replace("src=\"/", "src=\"" + _websiteNapLink + "/"));
+                var lastestCarsNap = GetLastestCars(carsNapDivs, _lastStoredHrefNap);
+                UpdateLastStoredHref(lastestCarsNap, _filenameNap, ref _lastStoredHrefNap);
+
+                if (lastestCarsNap.Any())
+                {
+                    string title = "Original link: <a href=\"" + _urlNap + "\">" + _urlNap + "</a><hr>";
+                    _html += title + string.Join("<hr>", lastestCarsNap.Select(s => s.InnerHtml)) + "<br/>";
+                    Logger.Write("lastestCarsNap: " + lastestCarsNap.Count);
+                }
+
+                var doc = new HtmlWeb().Load(_urlBcpea).DocumentNode;
+                var nodeBody = doc.SelectSingleNode("//body");
+                var n = nodeBody.SelectNodes("//ul[@class]");
+                var carsCsiLis = n.First(at => at.Attributes.AttributesWithName("class").Select(a => a.Value == "results_list").First()).SelectNodes("li").ToList();
+                carsCsiLis.ForEach(li => li.InnerHtml = li.InnerHtml.Replace("href=\"/bg/auto/", "href=\"" + _websiteBCPEALink + "/bg/auto/"));
+                var lastestCars = GetLastestCars(carsCsiLis, _lastStoredHrefBCPEA);
+                UpdateLastStoredHref(lastestCars, _filenameBCPEA, ref _lastStoredHrefBCPEA);
+
+                if (lastestCars.Any())
+                {
+                    string title = "Original link: <a href=\"" + _urlBcpea + "\">" + _urlBcpea + "</a><hr>";
+                    _html += title + string.Join("<hr>", lastestCars.Select(s => s.InnerHtml));
+                    Logger.Write("lastestCars: " + lastestCars.Count);
+                }
             }
-
-            var doc = new HtmlWeb().Load(_urlBcpea).DocumentNode;
-            var nodeBody = doc.SelectSingleNode("//body");
-            var n = nodeBody.SelectNodes("//ul[@class]");
-            var carsCsiLis = n.First(at => at.Attributes.AttributesWithName("class").Select(a => a.Value == "results_list").First()).SelectNodes("li").ToList();
-            carsCsiLis.ForEach(li => li.InnerHtml = li.InnerHtml.Replace("href=\"/bg/auto/", "href=\"" + _websiteBCPEALink + "/bg/auto/"));
-            var lastestCars = GetLastestCars(carsCsiLis, _lastStoredHref);
-            UpdateLastStoredHref(lastestCars, _filename, ref _lastStoredHref);
-
-            if (lastestCars.Any())
+            catch (Exception ex)
             {
-                string title = "Original link: <a href=\"" + _urlBcpea + "\">" + _urlBcpea + "</a><hr>";
-                _html += title + string.Join("<hr>", lastestCars.Select(s => s.InnerHtml));
+                Logger.Write("Error in Update(): ", ex);
             }
         }
-        
+
+
     }
 
 }
